@@ -170,7 +170,7 @@
     .item-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
     #loader { text-align: center; font-size: 18px; padding: 40px; color: var(--text-muted-color); }
     .low-stock-indicator { color: var(--danger-color); font-weight: bold; }
-    .validation-message { color: var(--danger-color); font-size: 12px; margin-top: 4px; }
+    .validation-message { color: var(--danger-color); font-size: 12px; margin-top: 4px; display: block; min-height: 1em; }
     .theme-switcher {
       position: absolute;
       bottom: 20px;
@@ -433,6 +433,17 @@
             acc[category] = (acc[category] || 0) + item.totalQuantity;
             return acc;
         }, {});
+
+        if (Object.keys(categoryCounts).length === 0) {
+            if (inventoryChart) inventoryChart.destroy();
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.font = "16px Inter";
+            ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-muted-color');
+            ctx.textAlign = "center";
+            ctx.fillText("No inventory data to display.", ctx.canvas.width / 2, ctx.canvas.height / 2);
+            return;
+        }
+
         const chartData = {
             labels: Object.keys(categoryCounts),
             datasets: [{
@@ -524,14 +535,14 @@
     function validateForm() {
         let isValid = true;
         document.querySelectorAll('#transactionForm [required]').forEach(input => {
-            const messageEl = input.nextElementSibling;
+            const messageEl = input.parentElement.querySelector('.validation-message');
             if (!input.value) {
                 isValid = false;
                 input.style.borderColor = 'var(--danger-color)';
-                if (messageEl && messageEl.classList.contains('validation-message')) messageEl.textContent = 'This field is required.';
+                if (messageEl) messageEl.textContent = 'This field is required.';
             } else {
                 input.style.borderColor = 'var(--border-color)';
-                if (messageEl && messageEl.classList.contains('validation-message')) messageEl.textContent = '';
+                if (messageEl) messageEl.textContent = '';
             }
         });
         return isValid;
@@ -551,10 +562,13 @@
       });
       if (items.length === 0) { showResponseMessage('error', "Please add at least one item."); submitBtn.disabled = false; submitBtn.textContent = 'Log Transaction'; return; }
       const transactionData = { transactionType: document.getElementById('transactionType').value, person: document.getElementById('person').value, notes: document.getElementById('notes').value, items: items };
+      
       fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify(transactionData),
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // FIX for CORS
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8' // FIX for CORS
+        },
       })
       .then(res => res.json())
       .then(result => { result.status === 'success' ? onSuccess(result) : showResponseMessage('error', result.message); })
@@ -596,4 +610,4 @@
     }
   </script>
 </body>
-</ht
+</html>
