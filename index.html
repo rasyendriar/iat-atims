@@ -336,7 +336,7 @@
   </template>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXL1rhD_30u134jHNC8b8PLEQRGCSDUnzXzGFNfzi9kjL7KF88-ldFwNl4seexjFL7iw/exec'; 
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx5EDNIzHzuLc_sKwGaEpForViky0Cd7gA_Sh1IQ2gw1JQSN0lX4ujhP1GFLJPZF3ma_A/exec'; 
     const LOW_STOCK_THRESHOLD = 5;
     let masterParts = [], inventoryStock = [], storingPlaces = [], projects = [], people = [], itemCounter = 0, combinedInventory = [], aggregatedInventory = [], inventoryChart = null;
 
@@ -566,9 +566,7 @@
       fetch(WEB_APP_URL, {
         method: 'POST',
         body: JSON.stringify(transactionData),
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8' // FIX for CORS
-        },
+        // No Content-Type header needed for this type of request to avoid preflight
       })
       .then(res => res.json())
       .then(result => { result.status === 'success' ? onSuccess(result) : showResponseMessage('error', result.message); })
