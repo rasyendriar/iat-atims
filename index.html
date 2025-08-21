@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* CSS Variables for Theming */
+    :root {
+      --bg-color: #f8f9fa;
+      --card-bg-color: #ffffff;
+      --text-color: #212529;
+      --text-muted-color: #6c757d;
+      --border-color: #dee2e6;
+      --primary-color: #007aff;
+      --primary-hover-color: #0056b3;
+      --danger-color: #dc3545;
+      --danger-hover-color: #c82333;
+      --success-color: #28a745;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --border-radius: 12px;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --card-bg-color: #1e1e1e;
+      --text-color: #e0e0e0;
+      --text-muted-color: #888888;
+      --border-color: #333333;
+    }
+
+    /* General Styles */
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .main-container {
+      display: flex;
+    }
+    .sidebar {
+      width: 240px;
+      background-color: var(--card-bg-color);
+      border-right: 1px solid var(--border-color);
+      padding: 20px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      transition: transform 0.3s ease-in-out;
+      z-index: 1000;
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 40px;
+    }
+    .logo {
+      width: 32px;
+      height: 32px;
+    }
+    .sidebar-header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--text-muted-color);
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .nav-link:hover {
+      background-color: rgba(0, 122, 255, 0.1);
+    }
+    .nav-link.active {
+      background-color: var(--primary-color);
+      color: #fff;
+    }
+    .content {
+      margin-left: 240px;
+      width: calc(100% - 240px);
+      padding: 30px;
+    }
+    .page {
+      opacity: 1;
+      transition: opacity 0.4s ease-in-out;
+    }
+    .page.hidden {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+    .card {
+      background-color: var(--card-bg-color);
+      padding: 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 25px;
+      border: 1px solid var(--border-color);
+    }
+    h2 { font-size: 24px; font-weight: 600; margin-bottom: 20px; }
+    h3 { font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 15px; }
+    label { font-size: 14px; font-weight: 500; margin-bottom: 8px; display: block; }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background-color 0.2s;
+    }
+    button:hover { background-color: var(--primary-hover-color); }
+    button.secondary { background-color: var(--text-muted-color); }
+    button.secondary:hover { background-color: #5a6268; }
+    button.danger { background-color: var(--danger-color); }
+    button.danger:hover { background-color: var(--danger-hover-color); }
+    .alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .alert-danger { background-color: rgba(220, 53, 69, 0.1); color: var(--danger-color); }
+    .alert-success { background-color: rgba(40, 167, 69, 0.1); color: var(--success-color); }
+    .hidden { display: none; }
+    .item-row { border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; margin-bottom: 15px; background-color: var(--bg-color); }
+    .item-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .item-row-header h4 { margin: 0; font-size: 16px; }
+    .item-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    #loader { text-align: center; font-size: 18px; padding: 40px; color: var(--text-muted-color); }
+    .low-stock-indicator { color: var(--danger-color); font-weight: bold; }
+    .validation-message { color: var(--danger-color); font-size: 12px; margin-top: 4px; }
+    .theme-switcher {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .hamburger { display: none; }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .content {
+        margin-left: 0;
+        width: 100%;
+        padding: 20px;
+      }
+      .hamburger {
+        display: block;
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: var(--card-bg-color);
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: var(--shadow);
+      }
+      .item-row-grid {
+        grid-template-columns: 1fr;
+      }
+      h2 { font-size: 20px; }
+    }
+    
+    /* Card Layout for Dashboard */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    #lowStockGrid, #allPartsGrid {
+        max-height: 400px; /* Set a max height */
+        overflow-y: auto; /* Enable vertical scrolling */
+        padding-right: 10px; /* Space for the scrollbar */
+    }
+    .inventory-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 15px;
+      background-color: var(--bg-color);
+    }
+    .inventory-card h4 { margin: 0 0 10px 0; font-size: 16px; font-weight: 600; }
+    .inventory-card p { margin: 4px 0; font-size: 14px; color: var(--text-muted-color); }
+    .stock-level {
+      height: 8px;
+      border-radius: 4px;
+      background-color: var(--border-color);
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .stock-level-bar {
+      height: 100%;
+      width: 0;
+      transition: width 0.5s;
+    }
+    .stock-level-bar.high { background-color: var(--success-color); }
+    .stock-level-bar.medium { background-color: #ffc107; }
+    .stock-level-bar.low { background-color: var(--danger-color); }
+    #inventoryChartContainer {
+        max-height: 350px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7L12 3L4 7L12 11L20 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 7V17L12 21L20 17V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h1>Inventory</h1>
+      </div>
+      <div class="nav-link active" onclick="showView('dashboardView')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-link" onclick="showView('transactionView')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        <span>Transactions</span>
+      </div>
+      <div class="theme-switcher" onclick="toggleTheme()">
+        <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg id="theme-icon-moon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        <span id="theme-text">Dark Mode</span>
+      </div>
+    </nav>
+    <div class="hamburger" onclick="toggleSidebar()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </div>
+    <main class="content">
+      <div id="loader">Loading...</div>
+      <div id="app-content" class="hidden">
+        <!-- Dashboard View -->
+        <div id="dashboardView" class="page">
+          <h2>Dashboard</h2>
+          <div class="card">
+            <h3>Inventory Overview</h3>
+            <div id="inventoryChartContainer">
+                <canvas id="inventoryChart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Low Stock Items (Total <= 3)</h3>
+            <div class="form-group"><label for="lowStockFilter">Filter by Part Category</label><select id="lowStockFilter" onchange="renderDashboard()"></select></div>
+            <div id="lowStockGrid" class="card-grid"></div>
+          </div>
+          <div class="card">
+            <h3>All Parts Inventory (by Location)</h3>
+            <div class="form-group"><label for="allPartsSearch">Search by Part Name</label><input type="text" id="allPartsSearch" onkeyup="renderDashboard()" placeholder="Type to search..."></div>
+            <div id="allPartsGrid" class="card-grid"></div>
+          </div>
+        </div>
+        <!-- Transaction View -->
+        <div id="transactionView" class="page hidden">
+          <h2>Log Transaction</h2>
+          <form id="transactionForm" novalidate>
+            <div class="card">
+              <div class="form-group"><label for="transactionType">Transaction Type</label><select id="transactionType" required><option value="Incoming">Incoming</option><option value="Outgoing">Outgoing</option><option value="Transfer">Transfer</option></select></div>
+              <div class="form-group"><label for="person">Person</label><select id="person" required></select><span class="validation-message"></span></div>
+              <div class="form-group"><label for="notes">Notes</label><textarea id="notes"></textarea></div>
+            </div>
+            <div class="card">
+              <h3>Items</h3>
+              <div id="items-container"></div>
+              <button type="button" class="secondary" onclick="addItemRow()">Add Item</button>
+            </div>
+            <button type="submit" id="submitBtn">Log Transaction</button>
+          </form>
+          <div id="response-message"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <template id="item-row-template">
+    <div class="item-row">
+      <div class="item-row-header"><h4 class="item-title">Item</h4><button type="button" class="danger remove-btn">Remove</button></div>
+      <div class="item-row-grid">
+        <div class="form-group"><label>Part Name</label><input type="text" class="partNameSearch" placeholder="Search for part..."><select class="partName" required></select><span class="validation-message"></span></div>
+        <div class="form-group"><label>Part Type</label><select class="partType" required></select><span class="validation-message"></span></div>
+      </div>
+      <div class="fields-container"></div>
+    </div>
+  </template>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXL1rhD_30u134jHNC8b8PLEQRGCSDUnzXzGFNfzi9kjL7KF88-ldFwNl4seexjFL7iw/exec'; 
+    const LOW_STOCK_THRESHOLD = 3;
+    let masterParts = [], inventoryStock = [], storingPlaces = [], projects = [], people = [], itemCounter = 0, combinedInventory = [], aggregatedInventory = [], inventoryChart = null;
+
+    window.addEventListener('load', initialize);
+
+    function initialize() {
+      const loader = document.getElementById('loader');
+      const appContent = document.getElementById('app-content');
+      loader.classList.remove('hidden');
+      appContent.classList.add('hidden');
+      
+      const savedTheme = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+
+      fetch(WEB_APP_URL + '?action=getInitialData')
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            masterParts = data.data.masterParts; inventoryStock = data.data.inventoryStock; storingPlaces = data.data.storingPlaces; projects = data.data.projects; people = data.data.people;
+            populateSelect('person', people, 'Select Person');
+            prepareDashboardData(); renderDashboard();
+            loader.classList.add('hidden'); appContent.classList.remove('hidden');
+          } else { showResponseMessage('error', data.message); }
+        })
+        .catch(err => {
+          showResponseMessage('error', 'Failed to load initial data.');
+          loader.textContent = 'Error loading data. Please refresh.';
+        });
+    }
+
+    function showView(viewId) {
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      document.getElementById(viewId).classList.remove('hidden');
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      document.querySelector(`.nav-link[onclick="showView('${viewId}')"]`).classList.add('active');
+      if (window.innerWidth <= 768) toggleSidebar();
+    }
+
+    function prepareDashboardData() {
+        const partMapForDetails = new Map(masterParts.map(p => [p.partId, p]));
+        combinedInventory = inventoryStock.map(stock => ({ ...stock, ...partMapForDetails.get(stock.partId) }));
+        const partMapForAggregation = new Map(masterParts.map(p => [p.partId, { ...p, totalQuantity: 0 }]));
+        inventoryStock.forEach(stock => {
+            if (partMapForAggregation.has(stock.partId)) partMapForAggregation.get(stock.partId).totalQuantity += stock.quantity;
+        });
+        aggregatedInventory = Array.from(partMapForAggregation.values());
+        const partCategories = ['All Categories', ...new Set(masterParts.map(p => p.partCategory).filter(Boolean))].sort();
+        populateSelect('lowStockFilter', partCategories, 'Select Category');
+    }
+
+    function renderDashboard() {
+        const lowStockFilter = document.getElementById('lowStockFilter').value;
+        const lowStockData = aggregatedInventory.filter(item => (item.totalQuantity <= LOW_STOCK_THRESHOLD) && (lowStockFilter === 'All Categories' || item.partCategory === lowStockFilter));
+        renderCards('lowStockGrid', lowStockData, true);
+        const allPartsSearch = document.getElementById('allPartsSearch').value.toUpperCase();
+        const allPartsData = combinedInventory.filter(item => item.partName && item.partName.toUpperCase().includes(allPartsSearch));
+        renderCards('allPartsGrid', allPartsData, false);
+        renderInventoryChart();
+    }
+
+    function renderCards(gridId, data, isAggregated) {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = '';
+        if (data.length === 0) {
+            grid.innerHTML = '<p>No items found.</p>';
+            return;
+        }
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'inventory-card';
+            const quantity = isAggregated ? item.totalQuantity : item.quantity;
+            const maxStock = Math.max(...aggregatedInventory.map(p => p.totalQuantity), 20);
+            const stockPercent = (quantity / maxStock) * 100;
+            let stockLevelClass = 'high';
+            if (stockPercent < 50) stockLevelClass = 'medium';
+            if (stockPercent < 25) stockLevelClass = 'low';
+
+            card.innerHTML = `
+                <h4>${item.partName || 'N/A'}</h4>
+                <p>${item.partType || 'N/A'}</p>
+                <p>${isAggregated ? item.partCategory : item.storingPlace}</p>
+                <p><strong>Qty: <span class="${quantity <= LOW_STOCK_THRESHOLD ? 'low-stock-indicator' : ''}">${quantity}</span></strong></p>
+                <div class="stock-level"><div class="stock-level-bar ${stockLevelClass}" style="width: ${stockPercent}%"></div></div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function renderInventoryChart() {
+        const ctx = document.getElementById('inventoryChart').getContext('2d');
+        const categoryCounts = aggregatedInventory.reduce((acc, item) => {
+            const category = item.partCategory || 'Uncategorized';
+            acc[category] = (acc[category] || 0) + item.totalQuantity;
+            return acc;
+        }, {});
+        const chartData = {
+            labels: Object.keys(categoryCounts),
+            datasets: [{
+                label: 'Total Quantity by Category',
+                data: Object.values(categoryCounts),
+                backgroundColor: [
+                    'rgba(0, 122, 255, 0.7)',
+                    'rgba(52, 199, 89, 0.7)',
+                    'rgba(255, 149, 0, 0.7)',
+                    'rgba(88, 86, 214, 0.7)',
+                    'rgba(255, 45, 85, 0.7)',
+                    'rgba(175, 82, 222, 0.7)'
+                ],
+                borderColor: 'var(--card-bg-color)',
+                borderWidth: 2
+            }]
+        };
+        if (inventoryChart) inventoryChart.destroy();
+        inventoryChart = new Chart(ctx, { type: 'pie', data: chartData, options: { responsive: true, maintainAspectRatio: false } });
+    }
+
+    function addItemRow() {
+      itemCounter++;
+      const template = document.getElementById('item-row-template');
+      const clone = template.content.cloneNode(true);
+      const itemRow = clone.querySelector('.item-row');
+      itemRow.id = `item-row-${itemCounter}`;
+      clone.querySelector('.item-title').textContent = `Item ${itemCounter}`;
+      clone.querySelector('.partNameSearch').onkeyup = () => filterPartNames(itemCounter);
+      clone.querySelector('.partName').id = `partName-${itemCounter}`;
+      clone.querySelector('.partName').onchange = () => populatePartTypes(itemCounter);
+      clone.querySelector('.partType').id = `partType-${itemCounter}`;
+      clone.querySelector('.partType').onchange = () => updateItemFields(itemCounter);
+      clone.querySelector('.fields-container').id = `fields-container-${itemCounter}`;
+      clone.querySelector('.remove-btn').onclick = () => removeItemRow(itemCounter);
+      document.getElementById('items-container').appendChild(clone);
+      populatePartNames(itemCounter);
+    }
+
+    function removeItemRow(id) { document.getElementById(`item-row-${id}`)?.remove(); }
+    
+    function filterPartNames(id) {
+        const filter = document.querySelector(`#item-row-${id} .partNameSearch`).value.toUpperCase();
+        const select = document.querySelector(`#item-row-${id} .partName`);
+        select.querySelectorAll('option').forEach(opt => { opt.style.display = (opt.textContent.toUpperCase().includes(filter) || opt.value === "") ? "" : "none"; });
+    }
+
+    function updateItemFields(id) {
+      const type = document.getElementById('transactionType').value, container = document.getElementById(`fields-container-${id}`);
+      const partName = document.getElementById(`partName-${id}`).value, partType = document.getElementById(`partType-${id}`).value;
+      let html = '';
+      if (type === 'Incoming') html = `<div class="form-group"><label for="partId-${id}">Part ID</label><select id="partId-${id}" class="partId" required></select><span class="validation-message"></span></div><div class="item-row-grid"><div class="form-group"><label for="storingPlace-${id}">Storing Place</label><select id="storingPlace-${id}" class="storingPlace" required></select><span class="validation-message"></span></div><div class="form-group"><label for="project-${id}">Project</label><select id="project-${id}" class="project" required></select><span class="validation-message"></span></div></div><div class="form-group"><label for="quantity-${id}">Quantity</label><input type="number" id="quantity-${id}" class="quantity" min="1" required><span class="validation-message"></span></div>`;
+      else {
+        html = `<div class="form-group"><label for="stockId-${id}">From Stock</label><select id="stockId-${id}" class="stockId" onchange="updateMaxQuantity(${id})" required></select><span class="validation-message"></span></div><div class="form-group"><label for="quantity-${id}">Quantity</label><input type="number" id="quantity-${id}" class="quantity" min="1" required><span class="validation-message"></span></div>`;
+        if (type === 'Transfer') html += `<div class="item-row-grid"><div class="form-group"><label for="toStoringPlace-${id}">To Storing Place</label><select id="toStoringPlace-${id}" class="toStoringPlace" required></select><span class="validation-message"></span></div><div class="form-group"><label for="toProject-${id}">To Project</label><select id="toProject-${id}" class="toProject" required></select><span class="validation-message"></span></div></div>`;
+      }
+      container.innerHTML = html;
+      if (type === 'Incoming') { populateSelect(`storingPlace-${id}`, storingPlaces, 'Select Place'); populateSelect(`project-${id}`, projects, 'Select Project'); populatePartId(partName, partType, `partId-${id}`); }
+      else { populateStock(partName, partType, `stockId-${id}`); if (type === 'Transfer') { populateSelect(`toStoringPlace-${id}`, storingPlaces, 'Select Place'); populateSelect(`toProject-${id}`, projects, 'Select Project'); } }
+    }
+    
+    function updateMaxQuantity(id) {
+        const stockSelect = document.getElementById(`stockId-${id}`);
+        const quantityInput = document.getElementById(`quantity-${id}`);
+        const selectedOption = stockSelect.options[stockSelect.selectedIndex];
+        if (selectedOption?.text.includes('(')) {
+            quantityInput.max = parseInt(selectedOption.text.split('(')[1], 10);
+        }
+    }
+
+    function populateSelect(selectId, items, placeholder) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = `<option value="">${placeholder}</option>`;
+      items.forEach(item => {
+        const option = document.createElement('option');
+        if (typeof item === 'object' && item !== null && 'value' in item) { option.value = item.value; option.textContent = item.text; }
+        else { option.value = item; option.textContent = item; }
+        select.appendChild(option);
+      });
+    }
+
+    function populatePartNames(id) { populateSelect(`partName-${id}`, [...new Set(masterParts.map(p => p.partName))].sort(), 'Select Part'); }
+    function populatePartTypes(id) { const partName = document.getElementById(`partName-${id}`).value; populateSelect(`partType-${id}`, [...new Set(masterParts.filter(p => p.partName === partName).map(p => p.partType))].sort(), 'Select Type'); updateItemFields(id); }
+    function populatePartId(partName, partType, selectId) { populateSelect(selectId, masterParts.filter(p => p.partName === partName && p.partType === partType).map(p => p.partId), 'Select ID'); }
+    function populateStock(partName, partType, selectId) { const partIds = masterParts.filter(p => p.partName === partName && p.partType === partType).map(p => p.partId); populateSelect(selectId, inventoryStock.filter(s => partIds.includes(s.partId) && s.quantity > 0).map(s => ({ value: s.stockId, text: `${s.stockId} (${s.quantity} at ${s.storingPlace})` })), 'Select Stock'); }
+    
+    document.getElementById('transactionType').addEventListener('change', () => { document.getElementById('items-container').innerHTML = ''; itemCounter = 0; });
+
+    function validateForm() {
+        let isValid = true;
+        document.querySelectorAll('#transactionForm [required]').forEach(input => {
+            const messageEl = input.nextElementSibling;
+            if (!input.value) {
+                isValid = false;
+                input.style.borderColor = 'var(--danger-color)';
+                if (messageEl && messageEl.classList.contains('validation-message')) messageEl.textContent = 'This field is required.';
+            } else {
+                input.style.borderColor = 'var(--border-color)';
+                if (messageEl && messageEl.classList.contains('validation-message')) messageEl.textContent = '';
+            }
+        });
+        return isValid;
+    }
+
+    document.getElementById('transactionForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      if (!validateForm()) return;
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+      const items = [];
+      document.querySelectorAll('#items-container .item-row').forEach(row => {
+        const id = row.id.split('-')[2], itemData = {}, type = document.getElementById('transactionType').value;
+        if (type === 'Incoming') { itemData.partId = row.querySelector('.partId').value; itemData.storingPlace = row.querySelector('.storingPlace').value; itemData.project = row.querySelector('.project').value; itemData.quantity = parseInt(row.querySelector('.quantity').value, 10); }
+        else { itemData.stockId = row.querySelector('.stockId').value; itemData.quantity = parseInt(row.querySelector('.quantity').value, 10); if (type === 'Transfer') { itemData.toStoringPlace = row.querySelector('.toStoringPlace').value; itemData.toProject = row.querySelector('.toProject').value; } }
+        items.push(itemData);
+      });
+      if (items.length === 0) { showResponseMessage('error', "Please add at least one item."); submitBtn.disabled = false; submitBtn.textContent = 'Log Transaction'; return; }
+      const transactionData = { transactionType: document.getElementById('transactionType').value, person: document.getElementById('person').value, notes: document.getElementById('notes').value, items: items };
+      fetch(WEB_APP_URL, { method: 'POST', body: JSON.stringify(transactionData), headers: { 'Content-Type': 'application/json' } })
+      .then(res => res.json())
+      .then(result => { result.status === 'success' ? onSuccess(result) : showResponseMessage('error', result.message); })
+      .catch(error => showResponseMessage('error', 'Network error: ' + error.message))
+      .finally(() => { submitBtn.disabled = false; submitBtn.textContent = 'Log Transaction'; });
+    });
+
+    function onSuccess() {
+      showResponseMessage('success', 'Transaction successful!');
+      document.getElementById('transactionForm').reset();
+      document.getElementById('items-container').innerHTML = '';
+      itemCounter = 0;
+      initialize();
+    }
+
+    function showResponseMessage(type, message) {
+        const container = document.getElementById('response-message');
+        const icon = type === 'success' ? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>` : `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+        container.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+        container.innerHTML = `${icon}<span>${message}</span>`;
+    }
+    
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+        document.getElementById('theme-icon-sun').classList.toggle('hidden', theme === 'dark');
+        document.getElementById('theme-icon-moon').classList.toggle('hidden', theme === 'light');
+        document.getElementById('theme-text').textContent = theme === 'light' ? 'Dark Mode' : 'Light Mode';
+    }
+    
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+  </script>
+</body>
+</ht
