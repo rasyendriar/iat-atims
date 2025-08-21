@@ -336,7 +336,7 @@
   </template>
 
   <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyUdlzODoC0LiCREaMgAJtN2TT1q54PspS33BkXQuwHF5RdvW1kCfGJpj_keXFV8okYMA/exec'; 
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyZ9ngdEC6zsKUhW8x505KrpQCfeICbn7TZog8xZK-qlRxD50EZffzQtPr_pFhjcQddBw/exec'; 
     const LOW_STOCK_THRESHOLD = 5;
     let masterParts = [], inventoryStock = [], storingPlaces = [], projects = [], people = [], itemCounter = 0, combinedInventory = [], aggregatedInventory = [], inventoryChart = null;
 
@@ -563,11 +563,8 @@
       if (items.length === 0) { showResponseMessage('error', "Please add at least one item."); submitBtn.disabled = false; submitBtn.textContent = 'Log Transaction'; return; }
       const transactionData = { transactionType: document.getElementById('transactionType').value, person: document.getElementById('person').value, notes: document.getElementById('notes').value, items: items };
       
-      fetch(WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify(transactionData),
-        // No Content-Type header needed for this type of request to avoid preflight
-      })
+      const encodedData = encodeURIComponent(JSON.stringify(transactionData));
+      fetch(`${WEB_APP_URL}?action=submitTransaction&data=${encodedData}`)
       .then(res => res.json())
       .then(result => { result.status === 'success' ? onSuccess(result) : showResponseMessage('error', result.message); })
       .catch(error => showResponseMessage('error', 'Network error: ' + error.message))
@@ -609,4 +606,3 @@
   </script>
 </body>
 </html>
-
