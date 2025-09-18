@@ -148,6 +148,7 @@
       transition: background-color 0.2s;
     }
     button:hover { background-color: var(--primary-hover-color); }
+    button:disabled { background-color: var(--text-muted-color); cursor: not-allowed; }
     button.secondary { background-color: var(--text-muted-color); }
     button.secondary:hover { background-color: #5a6268; }
     button.danger { background-color: var(--danger-color); }
@@ -256,7 +257,6 @@
         justify-content: center;
         align-items: center;
     }
-
   </style>
 </head>
 <body>
@@ -293,6 +293,12 @@
         <!-- Dashboard View -->
         <div id="dashboardView" class="page">
           <h2>Dashboard</h2>
+          <!-- NEW: Report Generation Card -->
+          <div class="card">
+              <h3>Reports</h3>
+              <button id="generateReportBtn" onclick="handleGenerateReport()">Generate Full Inventory PDF Report</button>
+              <div id="report-status" style="margin-top: 15px;"></div>
+          </div>
           <div class="card">
             <h3>Inventory Overview</h3>
             <div id="inventoryChartContainer">
@@ -399,6 +405,33 @@
         .catch(err => {
           showResponseMessage('error', 'Failed to load initial data.');
           loader.textContent = 'Error loading data. Please refresh.';
+        });
+    }
+
+    // --- NEW: PDF REPORT FUNCTION ---
+    function handleGenerateReport() {
+      const btn = document.getElementById('generateReportBtn');
+      const statusDiv = document.getElementById('report-status');
+
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      statusDiv.textContent = 'Please wait, your PDF report is being created. This may take a moment...';
+
+      fetch(WEB_APP_URL + '?action=generateReport')
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success' && data.data.pdfUrl) {
+            statusDiv.innerHTML = `Report generated successfully! <a href="${data.data.pdfUrl}" target="_blank">Click here to view and download your report.</a>`;
+          } else {
+            statusDiv.textContent = 'Error: ' + (data.message || 'An unknown error occurred.');
+          }
+        })
+        .catch(err => {
+          statusDiv.textContent = 'Error: Failed to communicate with the server. ' + err.message;
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.textContent = 'Generate Full Inventory PDF Report';
         });
     }
 
